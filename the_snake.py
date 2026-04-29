@@ -216,10 +216,126 @@ class Snake(GameObject):
 
     def length(self):
         return len(self.positions)
+class Apple(GameObject):
+    def init(self, body_color=(255, 0, 0)):
+        super().init(body_color)
+        self.position = None
+
+    def draw(self):
+        if self.position:
+            self.draw_cell(self.position)
+
+    def randomize_position(self, forbidden_positions):
+        available = [
+            (x, y) for x in range(GRID_WIDTH) for y in range(GRID_HEIGHT)
+            if (x, y) not in forbidden_positions
+        ]
+        self.position = random.choice(available) if available else None
 
 
+def draw_game_area(snake, apple, bombs):
+    screen.fill(BOARD_BACKGROUND_COLOR)
+    snake.draw()
+    for bomb in bombs:
+        bomb.draw()
+    if apple.position:
+        apple.draw()
 
 
+def draw_info_area(score):
+    info_rect = pg.Rect(SCREEN_WIDTH - INFO_AREA_WIDTH, 0, INFO_AREA_WIDTH, SCREEN_HEIGHT)
+    pg.draw.rect(screen, LIGHT_GRAY, info_rect)
+    y_offset = 10
+    for line in INSTRUCTION_TEXT:
+        text_line = line.format(score) if "{}" in line else line
+        rendered = FONT.render(text_line, True, BLACK)
+        screen.blit(rendered, (SCREEN_WIDTH - INFO_AREA_WIDTH + 10, y_offset))
+        y_offset += 30
+
+
+def reset_game(snake, apple, bombs):
+    global score, frame_delay, apples_eaten
+    score = 0
+    frame_delay = 100
+    apples_eaten = 0
+    snake.reset()
+    bombs.clear()
+    occupied = [*snake.positions, *(b.position for b in bombs)]
+    apple.randomize_position(occupied)
+def game_over(collision_type):
+    global snake, apple, bombs
+    font = pg.font.Font(None, 36)
+    if collision_type == "bomb":
+        msg = "Game over here! Отрава wins. Try again"
+    else:
+        msg = "Game over here! Try again"
+    text_surf = font.render(msg, True, RED)
+    x = (SCREEN_WIDTH - INFO_AREA_WIDTH) // 2 - text_surf.get_width() // 2
+    y = SCREEN_HEIGHT // 2 - text_surf.get_height() // 2
+    screen.blit(text_surf, (x, y))
+    pg.display.flip()
+    pg.time.delay(2000)
+    reset_game(snake, apple, bombs)
+
+
+def handle_keys(snake):
+    for e in pg.event.get():
+        if e.type == pg.QUIT:
+            pg.quit()
+            sys.exit()
+        if e.type == pg.KEYDOWN:
+            if e.key == pg.K_ESCAPE:
+                pg.quit()
+                sys.exit()
+            if e.key in MOVEMENT_KEYS:
+                snake.update_direction(MOVEMENT_KEYS[e.key])
+
+
+def main():
+    global score, screen, clock, frame_delay, snake, apple, bombs, apples_eaten, FONT
+    pg.init()
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    FONT = pg.font.Font(None, 24)
+    pg.display.set_caption("Змейка")
+    clock = pg.time.Clock()
+
+    snake = Snake()
+    snake.init()
+    apple = Apple()
+    bombs = []
+
+    reset_game(snake, apple, bombs)
+    frame_count = 0
+    apples_eaten = 0
+
+    while True:
+        handle_keys(snake)
+        if not snake.move():
+            continue
+
+        if snake.get_head_position() in [b.position for b in bombs]:
+            game_over("bomb")
+            continue
+
+        if snake.get_head_position() == apple.position:
+            occupied = [*snake.positions, *(b.position for b in bombs)]
+            apple.randomize_position(occupied)
+            snake.grow = True
+            score += 1
+            apples_eaten += 1
+            frame_count += 1
+
+            if apples_eaten % 5 == 0:
+                frame_delay = max(10, frame_delay - 10)
+                occupied = [*snake.positions, apple.position, *(b.position for b in bombs)]
+                new_bomb = Apple(body_color=BLUE)
+                new_bomb.randomize_position(occupied)
+                bombs.append(new_bomb)
+
+        draw_game_area(snake, apple, bombs)
+        draw_info_area(score)
+        pg.display.flip()
+        clock.tick(1000 // frame_delay)
 if __name__ == '__main__':
     main()
 
