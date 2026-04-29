@@ -103,7 +103,94 @@ def main():
     # Инициализация PyGame:
     pygame.init()
     # Тут нужно создать экземпляры классов.
-    ...
+    ...import random
+import sys
+import pygame as pg
+
+# Константы для игры
+GRID_WIDTH = 20
+GRID_HEIGHT = 20
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+BOARD_BACKGROUND_COLOR = (30, 30, 30)
+LIGHT_GRAY = (200, 200, 200)
+BLACK = (0, 0, 0)
+DARK_GREEN = (0, 100, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+INFO_AREA_WIDTH = 400
+
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+
+MOVEMENT_KEYS = {
+    pg.K_w: UP,
+    pg.K_s: DOWN,
+    pg.K_a: LEFT,
+    pg.K_d: RIGHT,
+    pg.K_UP: UP,
+    pg.K_DOWN: DOWN,
+    pg.K_LEFT: LEFT,
+    pg.K_RIGHT: RIGHT,
+}
+
+INSTRUCTION_TEXT = [
+    "Score: {}",
+    "Use arrows or WASD to move",
+    "Avoid bombs",
+    "Eat apples to grow"
+]
+
+FONT = None  # будет инициализирован в main
+
+score = 0
+frame_delay = 100
+apples_eaten = 0
+
+
+class GameObject:
+    def init(self, color):
+        self.color = color
+
+    def draw_cell(self, position):
+        cell_size = 20
+        x, y = position
+        pg.draw.rect(
+            screen,
+            self.color,
+            pg.Rect(x * cell_size, y * cell_size, cell_size, cell_size)
+        )
+
+
+class Snake(GameObject):
+    """Наследуемый класс змейки"""
+
+    def init(self):
+        super().init(DARK_GREEN)
+        mid_x = GRID_WIDTH // 2
+        mid_y = GRID_HEIGHT // 2
+        self.positions = [(mid_x, mid_y)]
+        self.direction = random.choice([UP, DOWN, LEFT, RIGHT])
+        self.grow = False
+
+    def move(self):
+        """Инициализация движения"""
+        head_x, head_y = self.positions[0]
+        dx, dy = self.direction
+        new_head = ((head_x + dx) % GRID_WIDTH, (head_y + dy) % GRID_HEIGHT)
+
+        if new_head in self.positions[4:]:
+            game_over("self")
+            return False
+
+        self.positions.insert(0, new_head)
+        if not self.grow:
+            self.positions.pop()
+        else:
+            self.grow = False
+        return True
 
     # while True:
     #     clock.tick(SPEED)
