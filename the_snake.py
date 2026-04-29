@@ -196,7 +196,28 @@ class Snake(GameObject):
     #     clock.tick(SPEED)
 
         # Тут опишите основную логику игры.
-        # ...
+        # ... def draw(self):
+        """Отрисовка змейки"""
+        for pos in self.positions:
+            self.draw_cell(pos)
+
+    def update_direction(self, new_direction):
+        """Смена направления движения змейки"""
+        if (new_direction[0], new_direction[1]) != (-self.direction[0], -self.direction[1]):
+            self.direction = new_direction
+
+    def reset(self):
+        """Сброс параметров змейки"""
+        self.positions = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
+        self.direction = RIGHT
+
+    def get_head_position(self):
+        return self.positions[0]
+
+    def length(self):
+        return len(self.positions)
+
+
 
 
 if __name__ == '__main__':
